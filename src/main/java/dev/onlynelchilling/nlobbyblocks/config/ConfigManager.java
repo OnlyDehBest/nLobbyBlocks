@@ -71,6 +71,10 @@ public class ConfigManager {
         });
     }
 
+    public String getBlockName() {
+        return cached("block-name", () -> cfg().getString("block-name", ""));
+    }
+
     public int getHotbarSlot() {
         return cached("hotbar-slot", () -> Math.max(0, Math.min(8, cfg().getInt("hotbar-slot"))));
     }

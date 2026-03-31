@@ -1,6 +1,7 @@
 package dev.onlynelchilling.nlobbyblocks.manager;
 
 import dev.onlynelchilling.nlobbyblocks.NLobbyBlocks;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
@@ -35,6 +36,10 @@ public class ItemManager {
         ItemStack item = ItemStack.of(material, count);
         ItemMeta meta = item.getItemMeta();
         if (meta == null) return item;
+        String name = plugin.getConfigManager().getBlockName();
+        if (name != null && !name.isEmpty()) {
+            meta.displayName(LegacyComponentSerializer.legacyAmpersand().deserialize(name));
+        }
         meta.getPersistentDataContainer().set(key, PersistentDataType.BOOLEAN, true);
         item.setItemMeta(meta);
         cachedItem = item;

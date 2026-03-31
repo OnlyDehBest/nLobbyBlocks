@@ -7,7 +7,6 @@ import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 
-@SuppressWarnings("deprecation")
 public class EffectUtil {
 
     private final NLobbyBlocks plugin;
@@ -74,23 +73,28 @@ public class EffectUtil {
 
     public void spawnPlaceParticles(Location location) {
         if (!placeParticleEnabled || location.getWorld() == null) return;
-        Location center = location.clone().add(0.5, 0.5, 0.5);
         try {
-            location.getWorld().spawnParticle(placeParticle, center, placeParticleCount,
-                    placeParticleOX, placeParticleOY, placeParticleOZ, placeParticleSpeed);
+            placeParticle.builder()
+                    .location(new Location(location.getWorld(),
+                            location.getX() + 0.5, location.getY() + 0.5, location.getZ() + 0.5))
+                    .count(placeParticleCount)
+                    .offset(placeParticleOX, placeParticleOY, placeParticleOZ)
+                    .extra(placeParticleSpeed)
+                    .receivers(16, true)
+                    .spawn();
         } catch (Exception ignored) {}
     }
 
     public void spawnBreakParticles(Location location, Material blockMaterial) {
         if (!breakParticleEnabled || location.getWorld() == null) return;
-        Location center = location.clone().add(0.5, 0.5, 0.5);
         try {
             Particle.BLOCK.builder()
-                    .location(center)
+                    .location(new Location(location.getWorld(),
+                            location.getX() + 0.5, location.getY() + 0.5, location.getZ() + 0.5))
                     .count(breakParticleCount)
                     .offset(breakParticleOX, breakParticleOY, breakParticleOZ)
                     .data(blockMaterial.createBlockData())
-                    .receivers(32, true)
+                    .receivers(16, true)
                     .spawn();
         } catch (Exception ignored) {}
     }

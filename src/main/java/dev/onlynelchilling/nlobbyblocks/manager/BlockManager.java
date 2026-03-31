@@ -5,6 +5,7 @@ import dev.onlynelchilling.nlobbyblocks.util.EffectUtil;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
@@ -20,6 +21,7 @@ public class BlockManager {
     private int breakTime;
     private BukkitTask timerTask;
     private static final double CRACK_RANGE_SQ = 32.0 * 32.0;
+    private static final BlockData AIR_DATA = Material.AIR.createBlockData();
 
     private static final class BlockEntry {
         final Location location;
@@ -108,7 +110,7 @@ public class BlockManager {
 
         effectUtil.spawnBreakParticles(location, block.getType());
         effectUtil.playBreak(location);
-        block.setType(Material.AIR);
+        block.setBlockData(AIR_DATA, false);
     }
 
     public void registerBlock(Location location) {
@@ -125,7 +127,7 @@ public class BlockManager {
         for (BlockEntry entry : new ArrayList<>(activeBlocks.values())) {
             Location loc = entry.location;
             if (loc.getWorld() != null && loc.getBlock().getType() != Material.AIR) {
-                loc.getBlock().setType(Material.AIR);
+                loc.getBlock().setBlockData(AIR_DATA, false);
             }
         }
         activeBlocks.clear();

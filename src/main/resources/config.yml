@@ -6,6 +6,7 @@ prevent-move: true
 prevent-off-hand-swap: true
 
 block-type: MOSS_BLOCK
+block-name: "&dʙʟᴏᴄᴄʜɪ ᴍᴀɢɪᴄɪ &7(ᴄʟɪᴄᴋ ᴅᴇꜱᴛʀᴏ)"
 block-count: 64
 
 hotbar-slot: 0
