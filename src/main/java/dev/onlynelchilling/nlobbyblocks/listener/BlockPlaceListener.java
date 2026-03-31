@@ -1,7 +1,6 @@
 package dev.onlynelchilling.nlobbyblocks.listener;
 
 import dev.onlynelchilling.nlobbyblocks.NLobbyBlocks;
-import dev.onlynelchilling.nlobbyblocks.util.MessagesUtils;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -26,7 +25,7 @@ public class BlockPlaceListener implements Listener {
 
         if (!plugin.getRegionManager().isAllowed(location)) {
             event.setCancelled(true);
-            MessagesUtils.send(player, "place-denied-region");
+            plugin.getMessagesProvider().send(player, "place-denied-region");
             return;
         }
 

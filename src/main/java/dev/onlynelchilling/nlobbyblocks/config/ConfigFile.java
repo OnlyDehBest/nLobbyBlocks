@@ -1,47 +1,62 @@
 package dev.onlynelchilling.nlobbyblocks.config;
 
-import org.bukkit.Location;
-import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.Plugin;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.util.*;
+import java.io.File;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @SuppressWarnings("all")
 public class ConfigFile {
-    protected final Plugin plugin;
-    private File file;
+
+    private final Plugin plugin;
+    private final String fileName;
+    private final File file;
     private YamlConfiguration config;
-    private String fileName;
 
     public ConfigFile(Plugin plugin, String fileName) {
         this.plugin = plugin;
         this.fileName = fileName + ".yml";
-        file = new File(plugin.getDataFolder(), this.fileName);
+        this.file = new File(plugin.getDataFolder(), this.fileName);
+
         if (!file.exists()) {
             plugin.saveResource(this.fileName, false);
         }
+
         config = YamlConfiguration.loadConfiguration(file);
+
         if (config.getKeys(false).isEmpty()) {
             plugin.saveResource(this.fileName, true);
             config = YamlConfiguration.loadConfiguration(file);
         }
+
         mergeDefaults();
     }
 
-    public File getFile() { return file; }
-    public YamlConfiguration getConfig() { return config; }
-    public String getFileName() { return fileName; }
+    public YamlConfiguration getConfig() {
+        return config;
+    }
 
     public void reload() {
         config = YamlConfiguration.loadConfiguration(file);
+
         if (config.getKeys(false).isEmpty()) {
             plugin.saveResource(this.fileName, true);
             config = YamlConfiguration.loadConfiguration(file);
         }
+
         mergeDefaults();
     }
 
@@ -49,33 +64,13 @@ public class ConfigFile {
         InputStream defaultStream = plugin.getResource(fileName);
         if (defaultStream == null) return;
 
-        List<String> defaultLines;
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(defaultStream, StandardCharsets.UTF_8))) {
-            defaultLines = new ArrayList<>();
-            String line;
-            while ((line = reader.readLine()) != null) {
-                defaultLines.add(line);
-            }
-        } catch (IOException e) {
-            return;
-        }
+        List<String> defaultLines = readLines(defaultStream);
+        if (defaultLines == null) return;
 
         YamlConfiguration defaults = YamlConfiguration.loadConfiguration(
                 new StringReader(String.join("\n", defaultLines)));
 
-        boolean hasMissing = false;
-        for (String key : defaults.getKeys(true)) {
-            if (!defaults.isConfigurationSection(key) && !config.contains(key)) {
-                hasMissing = true;
-                break;
-            }
-            if (defaults.isConfigurationSection(key) && !config.isConfigurationSection(key) && !config.contains(key)) {
-                hasMissing = true;
-                break;
-            }
-        }
-
-        if (!hasMissing) return;
+        if (!hasMissingKeys(defaults)) return;
 
         byte[] backup;
         try {
@@ -84,6 +79,38 @@ public class ConfigFile {
             return;
         }
 
+        List<String> result = buildMergedLines(defaultLines, defaults);
+        writeMerged(result, backup);
+    }
+
+    private List<String> readLines(InputStream stream) {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8))) {
+            List<String> lines = new ArrayList<>();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                lines.add(line);
+            }
+            return lines;
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    private boolean hasMissingKeys(YamlConfiguration defaults) {
+        for (String key : defaults.getKeys(true)) {
+            if (!defaults.isConfigurationSection(key) && !config.contains(key)) {
+                return true;
+            }
+            if (defaults.isConfigurationSection(key)
+                    && !config.isConfigurationSection(key)
+                    && !config.contains(key)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private List<String> buildMergedLines(List<String> defaultLines, YamlConfiguration defaults) {
         Set<String> userKeys = config.getKeys(true);
         List<String> result = new ArrayList<>();
 
@@ -107,15 +134,8 @@ public class ConfigFile {
                 } else {
                     Object userValue = config.get(yamlPath);
                     int indent = countIndent(dLine);
-                    String dTrimmed = dLine.stripLeading();
-                    int dColon = dTrimmed.indexOf(':');
-                    String keyName = dTrimmed.substring(0, dColon).strip();
-                    if ((keyName.startsWith("'") && keyName.endsWith("'")) ||
-                            (keyName.startsWith("\"") && keyName.endsWith("\""))) {
-                        keyName = keyName.substring(1, keyName.length() - 1);
-                    }
-                    List<String> serialized = serializeValue(keyName, userValue, indent);
-                    result.addAll(serialized);
+                    String keyName = extractKeyName(dLine);
+                    result.addAll(serializeValue(keyName, userValue, indent));
                     i = skipValueBlock(defaultLines, i);
                 }
             } else {
@@ -130,20 +150,27 @@ public class ConfigFile {
             }
         }
 
+        return result;
+    }
+
+    private void writeMerged(List<String> result, byte[] backup) {
         try {
             Files.write(file.toPath(), result, StandardCharsets.UTF_8);
             YamlConfiguration test = YamlConfiguration.loadConfiguration(file);
+
             if (test.getKeys(false).isEmpty()) {
                 Files.write(file.toPath(), backup);
                 config = YamlConfiguration.loadConfiguration(file);
                 return;
             }
+
             config = test;
         } catch (Exception e) {
             try {
                 Files.write(file.toPath(), backup);
                 config = YamlConfiguration.loadConfiguration(file);
-            } catch (IOException ignored) {}
+            } catch (IOException ignored) {
+            }
         }
     }
 
@@ -155,15 +182,12 @@ public class ConfigFile {
         int colonIdx = trimmed.indexOf(':');
         if (colonIdx <= 0) return null;
 
-        char afterColon = colonIdx + 1 < trimmed.length() ? trimmed.charAt(colonIdx + 1) : ' ';
-        if (afterColon != ' ' && afterColon != '\0' && colonIdx + 1 < trimmed.length() && afterColon != '\n') {
+        if (colonIdx + 1 < trimmed.length()) {
+            char afterColon = trimmed.charAt(colonIdx + 1);
             if (afterColon != ' ' && afterColon != '\r') return null;
         }
 
-        String key = trimmed.substring(0, colonIdx).strip();
-        if (key.startsWith("'") || key.startsWith("\"")) {
-            key = key.substring(1, key.length() - 1);
-        }
+        String key = stripQuotes(trimmed.substring(0, colonIdx).strip());
         if (key.startsWith("-")) return null;
 
         int myIndent = countIndent(line);
@@ -177,16 +201,12 @@ public class ConfigFile {
             String pLine = lines.get(i);
             if (pLine.isBlank() || pLine.stripLeading().startsWith("#")) continue;
 
-            int pIndent = countIndent(pLine);
-            if (pIndent == expectedParentIndent) {
+            if (countIndent(pLine) == expectedParentIndent) {
                 String pTrimmed = pLine.stripLeading();
                 int pColon = pTrimmed.indexOf(':');
                 if (pColon <= 0) return null;
 
-                String pKey = pTrimmed.substring(0, pColon).strip();
-                if (pKey.startsWith("'") || pKey.startsWith("\"")) {
-                    pKey = pKey.substring(1, pKey.length() - 1);
-                }
+                String pKey = stripQuotes(pTrimmed.substring(0, pColon).strip());
                 if (pKey.startsWith("-")) return null;
 
                 pathParts.addFirst(pKey);
@@ -200,11 +220,14 @@ public class ConfigFile {
     private int skipValueBlock(List<String> lines, int startIdx) {
         int indent = countIndent(lines.get(startIdx));
         int i = startIdx + 1;
+
         while (i < lines.size()) {
             String l = lines.get(i);
+
             if (l.isBlank() || l.stripLeading().startsWith("#")) {
                 int peek = i;
-                while (peek < lines.size() && (lines.get(peek).isBlank() || lines.get(peek).stripLeading().startsWith("#"))) {
+                while (peek < lines.size()
+                        && (lines.get(peek).isBlank() || lines.get(peek).stripLeading().startsWith("#"))) {
                     peek++;
                 }
                 if (peek >= lines.size() || countIndent(lines.get(peek)) <= indent) {
@@ -213,11 +236,13 @@ public class ConfigFile {
                 i++;
                 continue;
             }
+
             if (countIndent(l) <= indent) {
                 return i - 1;
             }
             i++;
         }
+
         return i - 1;
     }
 
@@ -235,11 +260,7 @@ public class ConfigFile {
                         lines.addAll(serializeMapInList((Map<?, ?>) item, indent + 2));
                     } else {
                         String str = item == null ? "null" : item.toString();
-                        if (needsQuoting(str)) {
-                            lines.add(pad + "  - '" + str.replace("'", "''") + "'");
-                        } else {
-                            lines.add(pad + "  - " + str);
-                        }
+                        lines.add(pad + "  - " + (needsQuoting(str) ? "'" + str.replace("'", "''") + "'" : str));
                     }
                 }
             }
@@ -267,9 +288,11 @@ public class ConfigFile {
         String pad = " ".repeat(indent);
         List<String> lines = new ArrayList<>();
         boolean first = true;
+
         for (Map.Entry<?, ?> entry : map.entrySet()) {
             String k = entry.getKey().toString();
             Object v = entry.getValue();
+
             if (first) {
                 lines.add(pad + "- " + k + ": " + (v == null ? "null" : v));
                 first = false;
@@ -277,78 +300,58 @@ public class ConfigFile {
                 lines.add(pad + "  " + k + ": " + (v == null ? "null" : v));
             }
         }
+
         return lines;
+    }
+
+    private String extractKeyName(String line) {
+        String trimmed = line.stripLeading();
+        int colon = trimmed.indexOf(':');
+        return stripQuotes(trimmed.substring(0, colon).strip());
+    }
+
+    private String stripQuotes(String str) {
+        if ((str.startsWith("'") && str.endsWith("'"))
+                || (str.startsWith("\"") && str.endsWith("\""))) {
+            return str.substring(1, str.length() - 1);
+        }
+        return str;
     }
 
     private boolean needsQuoting(String str) {
         if (str.isEmpty()) return true;
+
         if (str.contains("#") || str.contains(":") || str.contains("{") || str.contains("}")
                 || str.contains("[") || str.contains("]") || str.contains(",")
                 || str.contains("&") || str.contains("*") || str.contains("?")
                 || str.contains("|") || str.contains(">") || str.contains("!")
-                || str.contains("%") || str.contains("@") || str.contains("`")) return true;
+                || str.contains("%") || str.contains("@") || str.contains("`")) {
+            return true;
+        }
+
         if (str.startsWith(" ") || str.endsWith(" ")) return true;
+
         if (str.equalsIgnoreCase("true") || str.equalsIgnoreCase("false")
                 || str.equalsIgnoreCase("null") || str.equalsIgnoreCase("yes")
-                || str.equalsIgnoreCase("no")) return true;
-        try { Double.parseDouble(str); return true; } catch (NumberFormatException ignored) {}
+                || str.equalsIgnoreCase("no")) {
+            return true;
+        }
+
+        try {
+            Double.parseDouble(str);
+            return true;
+        } catch (NumberFormatException ignored) {
+        }
+
         return false;
     }
 
     private int countIndent(String line) {
-        int c = 0;
+        int count = 0;
         for (int i = 0; i < line.length(); i++) {
-            if (line.charAt(i) == ' ') c++;
+            if (line.charAt(i) == ' ') count++;
             else break;
         }
-        return c;
+        return count;
     }
-
-    public void save() {
-        try {
-            config.save(file);
-            config = YamlConfiguration.loadConfiguration(file);
-        } catch (IOException e) {
-            plugin.getLogger().warning("Failed to save " + fileName);
-        }
-    }
-
-    public Object get(String path) { return config.get(path); }
-    public String getString(String path, String def) { return config.getString(path, def); }
-    public String getString(String path) { return config.getString(path); }
-    public int getInt(String path, int def) { return config.getInt(path, def); }
-    public int getInt(String path) { return config.getInt(path); }
-    public boolean getBoolean(String path, boolean def) { return config.getBoolean(path, def); }
-    public boolean getBoolean(String path) { return config.getBoolean(path); }
-    public double getDouble(String path, double def) { return config.getDouble(path, def); }
-    public double getDouble(String path) { return config.getDouble(path); }
-    public long getLong(String path, long def) { return config.getLong(path, def); }
-    public long getLong(String path) { return config.getLong(path); }
-    public List<String> getStringList(String path) { return config.getStringList(path); }
-    public List<Integer> getIntegerList(String path) { return config.getIntegerList(path); }
-    public List<Map<?, ?>> getMapList(String path) { return config.getMapList(path); }
-
-    public Map<String, Object> getMap(String path, Map<String, Object> def) {
-        return config.getConfigurationSection(path) != null
-                ? config.getConfigurationSection(path).getValues(false) : def;
-    }
-
-    public Map<String, Object> getMap(String path) {
-        return config.getConfigurationSection(path) != null
-                ? config.getConfigurationSection(path).getValues(false) : null;
-    }
-
-    @SuppressWarnings("unchecked")
-    public <T> T get(String path, Class<T> clazz, T def) {
-        return config.get(path, clazz) != null ? (T) config.get(path, clazz) : def;
-    }
-
-    @SuppressWarnings("unchecked")
-    public <T> T get(String path, Class<T> clazz) { return (T) config.get(path, clazz); }
-
-    public ConfigurationSection getConfigurationSection(String path) { return config.getConfigurationSection(path); }
-    public Location getLocation(String path, Location def) { return config.getLocation(path, def); }
-    public Location getLocation(String path) { return config.getLocation(path); }
-    public void set(String path, Object o) { config.set(path, o); }
-    public Set<String> getKeys(boolean deep) { return config.getKeys(deep); }
 }

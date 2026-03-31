@@ -20,6 +20,7 @@ public class ItemProtectionListener implements Listener {
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onDrop(PlayerDropItemEvent event) {
         if (!plugin.getConfigManager().isPreventDrop()) return;
+
         if (plugin.getItemManager().isLobbyBlock(event.getItemDrop().getItemStack())) {
             event.setCancelled(true);
         }
@@ -28,6 +29,7 @@ public class ItemProtectionListener implements Listener {
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onSwapHand(PlayerSwapHandItemsEvent event) {
         if (!plugin.getConfigManager().isPreventOffHandSwap()) return;
+
         if (plugin.getItemManager().isLobbyBlock(event.getMainHandItem())
                 || plugin.getItemManager().isLobbyBlock(event.getOffHandItem())) {
             event.setCancelled(true);
@@ -37,6 +39,7 @@ public class ItemProtectionListener implements Listener {
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onInventoryClick(InventoryClickEvent event) {
         if (!plugin.getConfigManager().isPreventMove()) return;
+
         if (plugin.getItemManager().isLobbyBlock(event.getCurrentItem())
                 || plugin.getItemManager().isLobbyBlock(event.getCursor())) {
             event.setCancelled(true);
@@ -46,10 +49,9 @@ public class ItemProtectionListener implements Listener {
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onInventoryDrag(InventoryDragEvent event) {
         if (!plugin.getConfigManager().isPreventMove()) return;
+
         if (plugin.getItemManager().isLobbyBlock(event.getOldCursor())) {
             event.setCancelled(true);
         }
     }
 }
-
-

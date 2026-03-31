@@ -1,9 +1,11 @@
 package dev.onlynelchilling.nlobbyblocks.command;
 
 import co.aikar.commands.BaseCommand;
-import co.aikar.commands.annotation.*;
+import co.aikar.commands.annotation.CommandAlias;
+import co.aikar.commands.annotation.CommandPermission;
+import co.aikar.commands.annotation.Description;
+import co.aikar.commands.annotation.Subcommand;
 import dev.onlynelchilling.nlobbyblocks.NLobbyBlocks;
-import dev.onlynelchilling.nlobbyblocks.util.MessagesUtils;
 import org.bukkit.command.CommandSender;
 
 @CommandAlias("nlb|nlobbyblocks")
@@ -20,11 +22,12 @@ public class NLBCommand extends BaseCommand {
     @Description("Reload configuration and messages")
     public void onReload(CommandSender sender) {
         plugin.getConfigManager().reload();
+        plugin.getMessagesProvider().reload();
         plugin.getRegionManager().load();
         plugin.getItemManager().invalidateCache();
         plugin.getBlockManager().reloadConfig();
         plugin.getEffectUtil().reload();
-        plugin.getMessagesProvider().reload();
-        MessagesUtils.send(sender, "command-reload");
+
+        plugin.getMessagesProvider().send(sender, "command-reload");
     }
 }

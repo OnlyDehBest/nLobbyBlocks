@@ -22,9 +22,11 @@ public class PlayerJoinListener implements Listener {
 
         if (plugin.getConfigManager().isJoinGiveDelayEnabled()) {
             long delay = plugin.getConfigManager().getJoinGiveDelay();
-            plugin.getServer().getScheduler().runTaskLater(plugin,
-                    () -> { if (player.isOnline()) plugin.getItemManager().giveLobbyBlock(player); },
-                    delay);
+            plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                if (player.isOnline()) {
+                    plugin.getItemManager().giveLobbyBlock(player);
+                }
+            }, delay);
         } else {
             plugin.getItemManager().giveLobbyBlock(player);
         }

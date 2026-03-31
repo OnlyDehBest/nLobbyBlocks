@@ -12,23 +12,20 @@ import dev.onlynelchilling.nlobbyblocks.manager.BlockManager;
 import dev.onlynelchilling.nlobbyblocks.manager.ItemManager;
 import dev.onlynelchilling.nlobbyblocks.manager.RegionManager;
 import dev.onlynelchilling.nlobbyblocks.util.EffectUtil;
+import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class NLobbyBlocks extends JavaPlugin {
 
-    private static NLobbyBlocks instance;
-
     private ConfigManager configManager;
     private MessagesProvider messagesProvider;
-    private RegionManager regionManager;
     private ItemManager itemManager;
-    private EffectUtil effectUtil;
     private BlockManager blockManager;
+    private RegionManager regionManager;
+    private EffectUtil effectUtil;
 
     @Override
     public void onEnable() {
-        instance = this;
-
         configManager = new ConfigManager(this);
         messagesProvider = new MessagesProvider(this);
         regionManager = new RegionManager(this);
@@ -36,28 +33,33 @@ public class NLobbyBlocks extends JavaPlugin {
         effectUtil = new EffectUtil(this);
         blockManager = new BlockManager(this, effectUtil);
 
-        getServer().getPluginManager().registerEvents(new PlayerJoinListener(this), this);
-        getServer().getPluginManager().registerEvents(new BlockPlaceListener(this), this);
-        getServer().getPluginManager().registerEvents(new BlockBreakListener(this), this);
-        getServer().getPluginManager().registerEvents(new ItemProtectionListener(this), this);
-
-        PaperCommandManager commandManager = new PaperCommandManager(this);
-        commandManager.enableUnstableAPI("help");
-        commandManager.registerCommand(new NLBCommand(this));
+        registerListeners();
+        registerCommands();
 
         getLogger().info("nLobbyBlocks enabled.");
     }
 
     @Override
     public void onDisable() {
-        if (getBlockManager() != null) {
-            getBlockManager().clearAll();
+        if (blockManager != null) {
+            blockManager.clearAll();
         }
         getLogger().info("nLobbyBlocks disabled.");
     }
 
-    public static NLobbyBlocks getInstance() {
-        return instance;
+    private void registerListeners() {
+        PluginManager pm = getServer().getPluginManager();
+
+        pm.registerEvents(new PlayerJoinListener(this), this);
+        pm.registerEvents(new BlockPlaceListener(this), this);
+        pm.registerEvents(new BlockBreakListener(this), this);
+        pm.registerEvents(new ItemProtectionListener(this), this);
+    }
+
+    private void registerCommands() {
+        PaperCommandManager commandManager = new PaperCommandManager(this);
+        commandManager.enableUnstableAPI("help");
+        commandManager.registerCommand(new NLBCommand(this));
     }
 
     public ConfigManager getConfigManager() {
@@ -68,19 +70,19 @@ public class NLobbyBlocks extends JavaPlugin {
         return messagesProvider;
     }
 
-    public RegionManager getRegionManager() {
-        return regionManager;
-    }
-
     public ItemManager getItemManager() {
         return itemManager;
     }
 
-    public EffectUtil getEffectUtil() {
-        return effectUtil;
-    }
-
     public BlockManager getBlockManager() {
         return blockManager;
+    }
+
+    public RegionManager getRegionManager() {
+        return regionManager;
+    }
+
+    public EffectUtil getEffectUtil() {
+        return effectUtil;
     }
 }

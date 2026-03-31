@@ -27,20 +27,25 @@ public class BlockBreakListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onBlockExplode(BlockExplodeEvent event) {
-        event.blockList().removeIf(block -> plugin.getBlockManager().isActiveBlock(block.getLocation()));
+        event.blockList().removeIf(
+                block -> plugin.getBlockManager().isActiveBlock(block.getLocation())
+        );
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onEntityExplode(EntityExplodeEvent event) {
-        event.blockList().removeIf(block -> plugin.getBlockManager().isActiveBlock(block.getLocation()));
+        event.blockList().removeIf(
+                block -> plugin.getBlockManager().isActiveBlock(block.getLocation())
+        );
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onBlockInteract(PlayerInteractEvent event) {
         if (!plugin.getConfigManager().isPreventBlockInteraction()) return;
         if (event.getClickedBlock() == null) return;
-        Location loc = event.getClickedBlock().getLocation();
-        if (plugin.getBlockManager().isActiveBlock(loc)) {
+
+        Location location = event.getClickedBlock().getLocation();
+        if (plugin.getBlockManager().isActiveBlock(location)) {
             event.setCancelled(true);
         }
     }

@@ -13,16 +13,19 @@ public class EffectUtil {
 
     private boolean placeSoundEnabled;
     private Sound placeSound;
-    private float placeSoundVolume, placeSoundPitch;
+    private float placeSoundVolume;
+    private float placeSoundPitch;
 
     private boolean breakSoundEnabled;
     private Sound breakSound;
-    private float breakSoundVolume, breakSoundPitch;
+    private float breakSoundVolume;
+    private float breakSoundPitch;
 
     private boolean placeParticleEnabled;
     private Particle placeParticle;
     private int placeParticleCount;
-    private double placeParticleOX, placeParticleOY, placeParticleOZ, placeParticleSpeed;
+    private double placeParticleOX, placeParticleOY, placeParticleOZ;
+    private double placeParticleSpeed;
 
     private boolean breakParticleEnabled;
     private int breakParticleCount;
@@ -36,15 +39,15 @@ public class EffectUtil {
     public void reload() {
         ConfigManager cm = plugin.getConfigManager();
 
-        placeSoundEnabled  = cm.isSoundEnabled("place");
-        placeSound         = cm.getSound("place");
-        placeSoundVolume   = cm.getSoundVolume("place");
-        placeSoundPitch    = cm.getSoundPitch("place");
+        placeSoundEnabled = cm.isSoundEnabled("place");
+        placeSound        = cm.getSound("place");
+        placeSoundVolume  = cm.getSoundVolume("place");
+        placeSoundPitch   = cm.getSoundPitch("place");
 
-        breakSoundEnabled  = cm.isSoundEnabled("break");
-        breakSound         = cm.getSound("break");
-        breakSoundVolume   = cm.getSoundVolume("break");
-        breakSoundPitch    = cm.getSoundPitch("break");
+        breakSoundEnabled = cm.isSoundEnabled("break");
+        breakSound        = cm.getSound("break");
+        breakSoundVolume  = cm.getSoundVolume("break");
+        breakSoundPitch   = cm.getSoundPitch("break");
 
         placeParticleEnabled = cm.isAnimationEnabled("place");
         placeParticle        = cm.getParticle("place");
@@ -73,29 +76,42 @@ public class EffectUtil {
 
     public void spawnPlaceParticles(Location location) {
         if (!placeParticleEnabled || location.getWorld() == null) return;
+
         try {
+            Location center = centerOf(location);
             placeParticle.builder()
-                    .location(new Location(location.getWorld(),
-                            location.getX() + 0.5, location.getY() + 0.5, location.getZ() + 0.5))
+                    .location(center)
                     .count(placeParticleCount)
                     .offset(placeParticleOX, placeParticleOY, placeParticleOZ)
                     .extra(placeParticleSpeed)
                     .receivers(16, true)
                     .spawn();
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
     }
 
     public void spawnBreakParticles(Location location, Material blockMaterial) {
         if (!breakParticleEnabled || location.getWorld() == null) return;
+
         try {
+            Location center = centerOf(location);
             Particle.BLOCK.builder()
-                    .location(new Location(location.getWorld(),
-                            location.getX() + 0.5, location.getY() + 0.5, location.getZ() + 0.5))
+                    .location(center)
                     .count(breakParticleCount)
                     .offset(breakParticleOX, breakParticleOY, breakParticleOZ)
                     .data(blockMaterial.createBlockData())
                     .receivers(16, true)
                     .spawn();
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
+    }
+
+    private static Location centerOf(Location blockLocation) {
+        return new Location(
+                blockLocation.getWorld(),
+                blockLocation.getX() + 0.5,
+                blockLocation.getY() + 0.5,
+                blockLocation.getZ() + 0.5
+        );
     }
 }
