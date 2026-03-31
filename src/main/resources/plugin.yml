@@ -1,0 +1,6 @@
+name: nLobbyBlocks
+version: '1.0'
+main: dev.onlynelchilling.nlobbyblocks.NLobbyBlocks
+api-version: "1.21"
+authors:
+  - onlynelchilling

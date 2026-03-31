@@ -1,0 +1,7 @@
+prefix: "§8[§anLobbyBlocks§8] "
+
+place-denied-region: "{prefix}§cPuoi piazzare blocchi solo nelle regioni consentite."
+
+command-reload: "{prefix}§aConfigurazione ricaricata con successo."
+
+no-permission: "{prefix}§cNon hai i permessi per usare questo comando."

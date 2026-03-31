@@ -1,0 +1,62 @@
+# nLobbyBlocks Configuration
+
+blocks-on-join: true
+prevent-drop: true
+prevent-move: true
+prevent-off-hand-swap: true
+
+block-type: MOSS_BLOCK
+block-count: 64
+
+hotbar-slot: 0
+
+join-give-delay:
+  enable: true
+  delay: 20 # Ticks (20 Ticks = 1 Second)
+
+break-after: 10 # Seconds
+
+environment:
+  prevent-block-interaction: false
+
+sounds:
+  place:
+    enabled: false
+    sound: BLOCK_NOTE_BLOCK_PLING
+    volume: 1.0
+    pitch: 1.2
+  break:
+    enabled: false
+    sound: BLOCK_GRASS_BREAK
+    volume: 1.0
+    pitch: 1.0
+
+animations:
+  place:
+    enabled: true
+    particle: HAPPY_VILLAGER
+    count: 12
+    offset-x: 0.5
+    offset-y: 0.5
+    offset-z: 0.5
+    speed: 0.05
+  break:
+    enabled: true
+    particle: POOF
+    count: 20
+    offset-x: 0.4
+    offset-y: 0.4
+    offset-z: 0.4
+    speed: 0.1
+
+regions:
+  # example:
+  #   world: world
+  #   min:
+  #     x: -100
+  #     y: 60
+  #     z: -100
+  #   max:
+  #     x: 100
+  #     y: 100
+  #     z: 100
