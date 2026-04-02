@@ -11,9 +11,9 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class BlockManager {
 
@@ -22,18 +22,20 @@ public class BlockManager {
 
     private final NLobbyBlocks plugin;
     private final EffectUtil effectUtil;
-    private final Map<String, BlockEntry> activeBlocks = new HashMap<>();
+    private final Map<String, BlockEntry> activeBlocks = new ConcurrentHashMap<>();
 
-    private BukkitTask timerTask;
+    private volatile BukkitTask timerTask;
     private int breakTime;
 
     private static final class BlockEntry {
 
+        final String key;
         final Location location;
         final int entityId;
         int elapsed;
 
-        BlockEntry(Location location, int entityId) {
+        BlockEntry(String key, Location location, int entityId) {
+            this.key = key;
             this.location = location;
             this.entityId = entityId;
         }
@@ -43,7 +45,6 @@ public class BlockManager {
         this.plugin = plugin;
         this.effectUtil = effectUtil;
         this.breakTime = plugin.getConfigManager().getBreakTime();
-        startTimer();
     }
 
     public void reloadConfig() {
@@ -53,24 +54,22 @@ public class BlockManager {
     public void registerBlock(Location location) {
         String key = toKey(location);
         int entityId = blockEntityId(location.getBlock());
-        activeBlocks.put(key, new BlockEntry(location, entityId));
+        activeBlocks.put(key, new BlockEntry(key, location, entityId));
+
+        if (timerTask == null) {
+            startTimer();
+        }
     }
 
     public boolean isActiveBlock(Location location) {
-        if (location.getWorld() == null) return false;
         return activeBlocks.containsKey(toKey(location));
     }
 
     public void clearAll() {
-        if (timerTask != null && !timerTask.isCancelled()) {
-            timerTask.cancel();
-        }
+        stopTimer();
 
-        for (BlockEntry entry : new ArrayList<>(activeBlocks.values())) {
-            Location loc = entry.location;
-            if (loc.getWorld() != null && loc.getBlock().getType() != Material.AIR) {
-                loc.getBlock().setBlockData(AIR_DATA, false);
-            }
+        for (BlockEntry entry : activeBlocks.values()) {
+            entry.location.getBlock().setBlockData(AIR_DATA, false);
         }
 
         activeBlocks.clear();
@@ -80,62 +79,73 @@ public class BlockManager {
         timerTask = new BukkitRunnable() {
             @Override
             public void run() {
-                if (!activeBlocks.isEmpty()) {
-                    tick();
-                }
+                tick();
             }
-        }.runTaskTimer(plugin, 20L, 20L);
+        }.runTaskTimerAsynchronously(plugin, 20L, 20L);
+    }
+
+    private void stopTimer() {
+        BukkitTask task = timerTask;
+        if (task != null) {
+            task.cancel();
+            timerTask = null;
+        }
     }
 
     private void tick() {
+        if (activeBlocks.isEmpty()) {
+            stopTimer();
+            return;
+        }
+
         List<BlockEntry> toBreak = null;
 
         for (BlockEntry entry : activeBlocks.values()) {
             entry.elapsed++;
 
             if (entry.elapsed >= breakTime) {
-                if (toBreak == null) toBreak = new ArrayList<>();
+                if (toBreak == null) toBreak = new ArrayList<>(4);
                 toBreak.add(entry);
             } else {
-                float progress = (float) entry.elapsed / breakTime;
-                sendBlockCrack(entry.location, progress, entry.entityId);
+                sendBlockCrack(entry);
             }
         }
 
         if (toBreak != null) {
             for (BlockEntry entry : toBreak) {
-                activeBlocks.remove(toKey(entry.location));
-                breakBlock(entry.location);
+                activeBlocks.remove(entry.key);
+                resetCrackAnimation(entry);
+                effectUtil.playBreak(entry.location);
+                entry.location.getBlock().setBlockData(AIR_DATA, false);
+            }
+        }
+
+        if (activeBlocks.isEmpty()) {
+            stopTimer();
+        }
+    }
+
+    private void sendBlockCrack(BlockEntry entry) {
+        float progress = (float) entry.elapsed / breakTime;
+        List<? extends Player> players = entry.location.getWorld().getPlayers();
+
+        for (int i = 0, size = players.size(); i < size; i++) {
+            Player player = players.get(i);
+            if (player.getLocation().distanceSquared(entry.location) <= CRACK_RANGE_SQ) {
+                player.sendBlockDamage(entry.location, progress, entry.entityId);
             }
         }
     }
 
-    private void sendBlockCrack(Location location, float progress, int entityId) {
-        if (location.getWorld() == null) return;
+    private void resetCrackAnimation(BlockEntry entry) {
+        List<? extends Player> players = entry.location.getWorld().getPlayers();
 
-        for (Player player : location.getWorld().getPlayers()) {
-            if (player.getLocation().distanceSquared(location) <= CRACK_RANGE_SQ) {
-                player.sendBlockDamage(location, progress, entityId);
+        for (int i = 0, size = players.size(); i < size; i++) {
+            Player player = players.get(i);
+            if (player.getLocation().distanceSquared(entry.location) <= CRACK_RANGE_SQ) {
+                player.sendBlockDamage(entry.location, 0f, entry.entityId);
             }
         }
-    }
-
-    private void breakBlock(Location location) {
-        if (location.getWorld() == null) return;
-
-        Block block = location.getBlock();
-        if (block.getType() == Material.AIR) return;
-
-        int entityId = blockEntityId(block);
-        for (Player player : location.getWorld().getPlayers()) {
-            if (player.getLocation().distanceSquared(location) <= CRACK_RANGE_SQ) {
-                player.sendBlockDamage(location, 0f, entityId);
-            }
-        }
-
-        effectUtil.spawnBreakParticles(location, block.getType());
-        effectUtil.playBreak(location);
-        block.setBlockData(AIR_DATA, false);
     }
 
     private static String toKey(Location loc) {

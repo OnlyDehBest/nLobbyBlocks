@@ -32,23 +32,6 @@ sounds:
     volume: 1.0
     pitch: 1.0
 
-animations:
-  place:
-    enabled: true
-    particle: HAPPY_VILLAGER
-    count: 12
-    offset-x: 0.5
-    offset-y: 0.5
-    offset-z: 0.5
-    speed: 0.05
-  break:
-    enabled: true
-    particle: POOF
-    count: 20
-    offset-x: 0.4
-    offset-y: 0.4
-    offset-z: 0.4
-    speed: 0.1
 
 regions:
   # example:

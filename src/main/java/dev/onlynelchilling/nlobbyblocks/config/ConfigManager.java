@@ -2,7 +2,6 @@ package dev.onlynelchilling.nlobbyblocks.config;
 
 import dev.onlynelchilling.nlobbyblocks.NLobbyBlocks;
 import org.bukkit.Material;
-import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -108,40 +107,6 @@ public class ConfigManager {
                 () -> (float) cfg().getDouble("sounds." + type + ".pitch", 1.0));
     }
 
-    public boolean isAnimationEnabled(String type) {
-        return cached("animations." + type + ".enabled",
-                () -> cfg().getBoolean("animations." + type + ".enabled"));
-    }
-
-    public Particle getParticle(String type) {
-        return cached("animations." + type + ".particle",
-                () -> Particle.valueOf(cfg().getString("animations." + type + ".particle", "POOF").toUpperCase()));
-    }
-
-    public int getParticleCount(String type) {
-        return cached("animations." + type + ".count",
-                () -> cfg().getInt("animations." + type + ".count", 10));
-    }
-
-    public double getParticleOffsetX(String type) {
-        return cached("animations." + type + ".offset-x",
-                () -> cfg().getDouble("animations." + type + ".offset-x", 0.3));
-    }
-
-    public double getParticleOffsetY(String type) {
-        return cached("animations." + type + ".offset-y",
-                () -> cfg().getDouble("animations." + type + ".offset-y", 0.3));
-    }
-
-    public double getParticleOffsetZ(String type) {
-        return cached("animations." + type + ".offset-z",
-                () -> cfg().getDouble("animations." + type + ".offset-z", 0.3));
-    }
-
-    public double getParticleSpeed(String type) {
-        return cached("animations." + type + ".speed",
-                () -> cfg().getDouble("animations." + type + ".speed", 0.05));
-    }
 
     private YamlConfiguration cfg() {
         return configFile.getConfig();

@@ -129,7 +129,8 @@ public class ConfigFile {
             }
 
             if (userKeys.contains(yamlPath)) {
-                if (defaults.isConfigurationSection(yamlPath)) {
+                if (defaults.isConfigurationSection(yamlPath)
+                        || config.isConfigurationSection(yamlPath)) {
                     result.add(dLine);
                 } else {
                     Object userValue = config.get(yamlPath);

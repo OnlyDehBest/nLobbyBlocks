@@ -31,7 +31,6 @@ public class BlockPlaceListener implements Listener {
 
         plugin.getBlockManager().registerBlock(location);
         plugin.getEffectUtil().playPlace(location);
-        plugin.getEffectUtil().spawnPlaceParticles(location);
 
         event.getItemInHand().setAmount(plugin.getConfigManager().getBlockCount());
     }
