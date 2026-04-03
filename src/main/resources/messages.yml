@@ -1,5 +1,5 @@
-prefix: "§d§lLOBBYBLOCKS §8» "
+prefix: "&d&lLOBBYBLOCKS &8» "
 
-command-reload: "{prefix}§aConfigurazione ricaricata con successo."
-place-denied-region: "{prefix}§cPuoi piazzare blocchi solo nelle regioni consentite."
-no-permission: "{prefix}§cNon hai i permessi per usare questo comando."
+command-reload: "{prefix}&aConfigurazione ricaricata con successo."
+place-denied-region: "{prefix}&cPuoi piazzare blocchi solo nelle regioni consentite."
+no-permission: "{prefix}&cNon hai i permessi per usare questo comando."

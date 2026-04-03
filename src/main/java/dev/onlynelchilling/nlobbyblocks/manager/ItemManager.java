@@ -3,7 +3,6 @@ package dev.onlynelchilling.nlobbyblocks.manager;
 import dev.onlynelchilling.nlobbyblocks.NLobbyBlocks;
 import dev.onlynelchilling.nlobbyblocks.util.TextUtil;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
@@ -44,8 +43,7 @@ public class ItemManager {
 
         String name = plugin.getConfigManager().getBlockName();
         if (name != null && !name.isEmpty()) {
-            Component parsed = TextUtil.parse(name)
-                    .decoration(TextDecoration.ITALIC, false);
+            Component parsed = TextUtil.parse(name);
             meta.displayName(parsed);
         }
 
