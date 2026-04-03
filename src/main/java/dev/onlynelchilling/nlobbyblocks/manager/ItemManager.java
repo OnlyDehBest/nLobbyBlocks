@@ -57,12 +57,8 @@ public class ItemManager {
     }
 
     public boolean isLobbyBlock(ItemStack item) {
-        if (item == null || item.getType() != blockMaterial) return false;
-
-        ItemMeta meta = item.getItemMeta();
-        if (meta == null) return false;
-
-        return meta.getPersistentDataContainer().has(key);
+        if (item == null || item.getType() != blockMaterial || !item.hasItemMeta()) return false;
+        return item.getItemMeta().getPersistentDataContainer().has(key);
     }
 
     public void giveLobbyBlock(Player player) {

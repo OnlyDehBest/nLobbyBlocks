@@ -22,21 +22,23 @@ public class BlockManager {
 
     private final NLobbyBlocks plugin;
     private final EffectUtil effectUtil;
-    private final Map<String, BlockEntry> activeBlocks = new ConcurrentHashMap<>();
+    private final Map<Long, BlockEntry> activeBlocks = new ConcurrentHashMap<>();
 
     private volatile BukkitTask timerTask;
     private int breakTime;
 
     private static final class BlockEntry {
 
-        final String key;
+        final long key;
         final Location location;
+        final Block block;
         final int entityId;
         int elapsed;
 
-        BlockEntry(String key, Location location, int entityId) {
+        BlockEntry(long key, Location location, Block block, int entityId) {
             this.key = key;
             this.location = location;
+            this.block = block;
             this.entityId = entityId;
         }
     }
@@ -52,9 +54,10 @@ public class BlockManager {
     }
 
     public void registerBlock(Location location) {
-        String key = toKey(location);
-        int entityId = blockEntityId(location.getBlock());
-        activeBlocks.put(key, new BlockEntry(key, location, entityId));
+        Block block = location.getBlock();
+        long key = toKey(location);
+        int entityId = blockEntityId(block);
+        activeBlocks.put(key, new BlockEntry(key, location, block, entityId));
 
         if (timerTask == null) {
             startTimer();
@@ -69,7 +72,7 @@ public class BlockManager {
         stopTimer();
 
         for (BlockEntry entry : activeBlocks.values()) {
-            entry.location.getBlock().setBlockData(AIR_DATA, false);
+            entry.block.setBlockData(AIR_DATA, false);
         }
 
         activeBlocks.clear();
@@ -116,7 +119,7 @@ public class BlockManager {
                 activeBlocks.remove(entry.key);
                 resetCrackAnimation(entry);
                 effectUtil.playBreak(entry.location);
-                entry.location.getBlock().setBlockData(AIR_DATA, false);
+                entry.block.setBlockData(AIR_DATA, false);
             }
         }
 
@@ -148,11 +151,10 @@ public class BlockManager {
         }
     }
 
-    private static String toKey(Location loc) {
-        return loc.getWorld().getName()
-                + ":" + loc.getBlockX()
-                + ":" + loc.getBlockY()
-                + ":" + loc.getBlockZ();
+    private static long toKey(Location loc) {
+        return ((long) loc.getBlockX() & 0x3FFFFFFL) << 38
+                | ((long) loc.getBlockZ() & 0x3FFFFFFL) << 12
+                | ((long) loc.getBlockY() & 0xFFFL);
     }
 
     private static int blockEntityId(Block block) {
