@@ -118,9 +118,15 @@ public class BlockManager {
             for (BlockEntry entry : toBreak) {
                 activeBlocks.remove(entry.key);
                 resetCrackAnimation(entry);
-                effectUtil.playBreak(entry.location);
-                entry.block.setBlockData(AIR_DATA, false);
             }
+
+            List<BlockEntry> finalToBreak = toBreak;
+            plugin.getServer().getScheduler().runTask(plugin, () -> {
+                for (BlockEntry entry : finalToBreak) {
+                    entry.block.setBlockData(AIR_DATA, false);
+                    effectUtil.playBreak(entry.location);
+                }
+            });
         }
 
         if (activeBlocks.isEmpty()) {

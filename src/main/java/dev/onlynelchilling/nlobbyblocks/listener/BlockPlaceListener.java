@@ -7,6 +7,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.inventory.EquipmentSlot;
 
 public class BlockPlaceListener implements Listener {
 
@@ -32,6 +33,10 @@ public class BlockPlaceListener implements Listener {
         plugin.getBlockManager().registerBlock(location);
         plugin.getEffectUtil().playPlace(location);
 
-        event.getItemInHand().setAmount(plugin.getConfigManager().getBlockCount());
+        if (event.getHand() == EquipmentSlot.HAND) {
+            player.getInventory().setItemInMainHand(plugin.getItemManager().createLobbyBlock());
+        } else {
+            player.getInventory().setItemInOffHand(plugin.getItemManager().createLobbyBlock());
+        }
     }
 }
