@@ -9,7 +9,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import java.util.HashMap;
 import java.util.function.Supplier;
 
-public class ConfigManager {
+public class ConfigManager implements ConfigProvider {
 
     private final ConfigFile configFile;
     private final HashMap<String, Object> cache = new HashMap<>();

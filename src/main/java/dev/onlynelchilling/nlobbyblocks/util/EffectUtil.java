@@ -1,11 +1,11 @@
 package dev.onlynelchilling.nlobbyblocks.util;
 
 import dev.onlynelchilling.nlobbyblocks.NLobbyBlocks;
-import dev.onlynelchilling.nlobbyblocks.config.ConfigManager;
+import dev.onlynelchilling.nlobbyblocks.config.ConfigProvider;
 import org.bukkit.Location;
 import org.bukkit.Sound;
 
-public class EffectUtil {
+public class EffectUtil implements EffectService {
 
     private final NLobbyBlocks plugin;
 
@@ -25,7 +25,7 @@ public class EffectUtil {
     }
 
     public void reload() {
-        ConfigManager cm = plugin.getConfigManager();
+        ConfigProvider cm = plugin.getConfigManager();
 
         placeSoundEnabled = cm.isSoundEnabled("place");
         placeSound        = cm.getSound("place");

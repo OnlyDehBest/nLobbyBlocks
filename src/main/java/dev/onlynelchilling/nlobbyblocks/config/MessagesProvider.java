@@ -9,7 +9,7 @@ import java.io.File;
 import java.io.InputStreamReader;
 import java.util.HashMap;
 
-public class MessagesProvider {
+public class MessagesProvider implements MessageService {
 
     private final NLobbyBlocks plugin;
     private final HashMap<String, String> cache = new HashMap<>();

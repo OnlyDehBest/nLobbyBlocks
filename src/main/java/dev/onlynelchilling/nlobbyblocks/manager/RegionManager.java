@@ -8,7 +8,7 @@ import org.bukkit.configuration.ConfigurationSection;
 import java.util.ArrayList;
 import java.util.List;
 
-public class RegionManager {
+public class RegionManager implements RegionService {
 
     private final NLobbyBlocks plugin;
     private final List<Region> regions = new ArrayList<>();

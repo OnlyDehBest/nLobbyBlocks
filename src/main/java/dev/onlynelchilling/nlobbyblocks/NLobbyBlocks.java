@@ -3,26 +3,33 @@ package dev.onlynelchilling.nlobbyblocks;
 import co.aikar.commands.PaperCommandManager;
 import dev.onlynelchilling.nlobbyblocks.command.NLBCommand;
 import dev.onlynelchilling.nlobbyblocks.config.ConfigManager;
+import dev.onlynelchilling.nlobbyblocks.config.ConfigProvider;
+import dev.onlynelchilling.nlobbyblocks.config.MessageService;
 import dev.onlynelchilling.nlobbyblocks.config.MessagesProvider;
 import dev.onlynelchilling.nlobbyblocks.listener.BlockBreakListener;
 import dev.onlynelchilling.nlobbyblocks.listener.BlockPlaceListener;
 import dev.onlynelchilling.nlobbyblocks.listener.ItemProtectionListener;
 import dev.onlynelchilling.nlobbyblocks.listener.PlayerJoinListener;
 import dev.onlynelchilling.nlobbyblocks.manager.BlockManager;
+import dev.onlynelchilling.nlobbyblocks.manager.BlockService;
 import dev.onlynelchilling.nlobbyblocks.manager.ItemManager;
+import dev.onlynelchilling.nlobbyblocks.manager.ItemService;
 import dev.onlynelchilling.nlobbyblocks.manager.RegionManager;
+import dev.onlynelchilling.nlobbyblocks.manager.RegionService;
+import dev.onlynelchilling.nlobbyblocks.util.EffectService;
 import dev.onlynelchilling.nlobbyblocks.util.EffectUtil;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class NLobbyBlocks extends JavaPlugin {
 
-    private ConfigManager configManager;
-    private MessagesProvider messagesProvider;
-    private ItemManager itemManager;
-    private BlockManager blockManager;
-    private RegionManager regionManager;
-    private EffectUtil effectUtil;
+    private ConfigProvider configManager;
+    private MessageService messagesProvider;
+    private ItemService itemManager;
+    private BlockService blockManager;
+    private RegionService regionManager;
+    private EffectService effectUtil;
 
     @Override
     public void onEnable() {
@@ -35,6 +42,10 @@ public class NLobbyBlocks extends JavaPlugin {
 
         registerListeners();
         registerCommands();
+
+        for (Player player : getServer().getOnlinePlayers()) {
+            blockManager.addPlayer(player);
+        }
 
         getLogger().info("nLobbyBlocks enabled.");
     }
@@ -62,27 +73,27 @@ public class NLobbyBlocks extends JavaPlugin {
         commandManager.registerCommand(new NLBCommand(this));
     }
 
-    public ConfigManager getConfigManager() {
+    public ConfigProvider getConfigManager() {
         return configManager;
     }
 
-    public MessagesProvider getMessagesProvider() {
+    public MessageService getMessagesProvider() {
         return messagesProvider;
     }
 
-    public ItemManager getItemManager() {
+    public ItemService getItemManager() {
         return itemManager;
     }
 
-    public BlockManager getBlockManager() {
+    public BlockService getBlockManager() {
         return blockManager;
     }
 
-    public RegionManager getRegionManager() {
+    public RegionService getRegionManager() {
         return regionManager;
     }
 
-    public EffectUtil getEffectUtil() {
+    public EffectService getEffectUtil() {
         return effectUtil;
     }
 }

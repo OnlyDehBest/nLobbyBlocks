@@ -10,7 +10,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 
-public class ItemManager {
+public class ItemManager implements ItemService {
 
     private static final String NBT_KEY = "nlb_lobby_block";
 
