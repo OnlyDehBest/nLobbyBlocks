@@ -7,15 +7,9 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-
 public class PlayerJoinListener implements Listener {
 
     private final NLobbyBlocks plugin;
-
-    private final Set<UUID> processedPlayers = ConcurrentHashMap.newKeySet();
 
     public PlayerJoinListener(NLobbyBlocks plugin) {
         this.plugin = plugin;
@@ -25,10 +19,6 @@ public class PlayerJoinListener implements Listener {
     public void onJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
         plugin.getBlockManager().addPlayer(player);
-
-        if (!processedPlayers.add(player.getUniqueId())) {
-            return;
-        }
 
         if (!plugin.getConfigManager().isBlocksOnJoin()) return;
 
