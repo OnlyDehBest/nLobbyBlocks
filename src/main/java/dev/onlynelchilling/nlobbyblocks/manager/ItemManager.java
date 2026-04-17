@@ -55,7 +55,9 @@ public class ItemManager implements ItemService {
     }
 
     public boolean isLobbyBlock(ItemStack item) {
-        if (item == null || item.getType() != blockMaterial || !item.hasItemMeta()) return false;
+        if (item == null) return false;
+        if (item.getType() != blockMaterial) return false;
+        if (!item.hasItemMeta()) return false;
         return item.getItemMeta().getPersistentDataContainer().has(key);
     }
 

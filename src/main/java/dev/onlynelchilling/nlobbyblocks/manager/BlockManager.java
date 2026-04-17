@@ -6,12 +6,12 @@ import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Player;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -35,6 +35,8 @@ public class BlockManager implements BlockService {
         final long key;
         final Location location;
         final Block block;
+        final World world;
+        final double x, y, z;
         final int entityId;
         int elapsed;
 
@@ -42,6 +44,10 @@ public class BlockManager implements BlockService {
             this.key = key;
             this.location = location;
             this.block = block;
+            this.world = location.getWorld();
+            this.x = location.getX();
+            this.y = location.getY();
+            this.z = location.getZ();
             this.entityId = entityId;
         }
     }
@@ -76,7 +82,17 @@ public class BlockManager implements BlockService {
     }
 
     public boolean isActiveBlock(Location location) {
+        if (activeBlocks.isEmpty()) return false;
         return activeBlocks.containsKey(toKey(location));
+    }
+
+    public boolean isActiveBlock(Block block) {
+        if (activeBlocks.isEmpty()) return false;
+        return activeBlocks.containsKey(toKey(block));
+    }
+
+    public boolean hasActiveBlocks() {
+        return !activeBlocks.isEmpty();
     }
 
     public void clearAll() {
@@ -118,27 +134,40 @@ public class BlockManager implements BlockService {
             return;
         }
 
-        List<BlockEntry> toBreak = null;
+        int playerCount = cachedPlayers.size();
+        Player[] players = playerCount == 0 ? null : new Player[playerCount];
+        World[] worlds = playerCount == 0 ? null : new World[playerCount];
+        double[] px = playerCount == 0 ? null : new double[playerCount];
+        double[] py = playerCount == 0 ? null : new double[playerCount];
+        double[] pz = playerCount == 0 ? null : new double[playerCount];
 
-        for (BlockEntry entry : activeBlocks.values()) {
-            entry.elapsed++;
-
-            if (entry.elapsed >= breakTime) {
-                if (toBreak == null) toBreak = new ArrayList<>(4);
-                toBreak.add(entry);
-            } else {
-                sendBlockCrack(entry);
+        if (players != null) {
+            int i = 0;
+            for (Player p : cachedPlayers) {
+                if (i >= playerCount) break;
+                Location l = p.getLocation();
+                players[i] = p;
+                worlds[i] = l.getWorld();
+                px[i] = l.getX();
+                py[i] = l.getY();
+                pz[i] = l.getZ();
+                i++;
             }
         }
 
-        if (toBreak != null) {
-            for (BlockEntry entry : toBreak) {
-                activeBlocks.remove(entry.key);
-                resetCrackAnimation(entry);
+        Iterator<BlockEntry> it = activeBlocks.values().iterator();
+        while (it.hasNext()) {
+            BlockEntry entry = it.next();
+            entry.elapsed++;
+
+            if (entry.elapsed >= breakTime) {
+                it.remove();
                 plugin.getServer().getRegionScheduler().execute(plugin, entry.location, () -> {
                     entry.block.setBlockData(AIR_DATA, false);
                     effectUtil.playBreak(entry.location);
                 });
+            } else if (players != null) {
+                sendBlockCrack(entry, players, worlds, px, py, pz, playerCount);
             }
         }
 
@@ -147,30 +176,35 @@ public class BlockManager implements BlockService {
         }
     }
 
-    private void sendBlockCrack(BlockEntry entry) {
+    private void sendBlockCrack(BlockEntry entry, Player[] players, World[] worlds,
+                                double[] px, double[] py, double[] pz, int count) {
         float progress = (float) entry.elapsed / breakTime;
+        World blockWorld = entry.world;
+        double bx = entry.x, by = entry.y, bz = entry.z;
 
-        for (Player player : cachedPlayers) {
-            if (player.getWorld().equals(entry.location.getWorld())
-                    && player.getLocation().distanceSquared(entry.location) <= CRACK_RANGE_SQ) {
-                player.sendBlockDamage(entry.location, progress, entry.entityId);
-            }
-        }
-    }
-
-    private void resetCrackAnimation(BlockEntry entry) {
-        for (Player player : cachedPlayers) {
-            if (player.getWorld().equals(entry.location.getWorld())
-                    && player.getLocation().distanceSquared(entry.location) <= CRACK_RANGE_SQ) {
-                player.sendBlockDamage(entry.location, 0f, entry.entityId);
+        for (int i = 0; i < count; i++) {
+            if (worlds[i] != blockWorld) continue;
+            double dx = px[i] - bx;
+            double dy = py[i] - by;
+            double dz = pz[i] - bz;
+            if (dx * dx + dy * dy + dz * dz <= CRACK_RANGE_SQ) {
+                players[i].sendBlockDamage(entry.location, progress, entry.entityId);
             }
         }
     }
 
     private static long toKey(Location loc) {
-        return ((long) loc.getBlockX() & 0x3FFFFFFL) << 38
-                | ((long) loc.getBlockZ() & 0x3FFFFFFL) << 12
-                | ((long) loc.getBlockY() & 0xFFFL);
+        return packKey(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
+    }
+
+    private static long toKey(Block block) {
+        return packKey(block.getX(), block.getY(), block.getZ());
+    }
+
+    private static long packKey(int x, int y, int z) {
+        return ((long) x & 0x3FFFFFFL) << 38
+                | ((long) z & 0x3FFFFFFL) << 12
+                | ((long) y & 0xFFFL);
     }
 
     private static int blockEntityId(Block block) {

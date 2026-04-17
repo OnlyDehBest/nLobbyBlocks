@@ -33,10 +33,11 @@ public class BlockPlaceListener implements Listener {
         plugin.getBlockManager().registerBlock(location);
         plugin.getEffectUtil().playPlace(location);
 
+        var refill = plugin.getItemManager().createLobbyBlock();
         if (event.getHand() == EquipmentSlot.HAND) {
-            player.getInventory().setItemInMainHand(plugin.getItemManager().createLobbyBlock());
+            player.getInventory().setItemInMainHand(refill);
         } else {
-            player.getInventory().setItemInOffHand(plugin.getItemManager().createLobbyBlock());
+            player.getInventory().setItemInOffHand(refill);
         }
     }
 }

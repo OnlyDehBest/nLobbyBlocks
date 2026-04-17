@@ -1,12 +1,16 @@
 package dev.onlynelchilling.nlobbyblocks.model;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.World;
 
 public class Region {
 
     private final String worldName;
     private final int minX, minY, minZ;
     private final int maxX, maxY, maxZ;
+
+    private volatile World cachedWorld;
 
     public Region(String worldName, int x1, int y1, int z1, int x2, int y2, int z2) {
         this.worldName = worldName;
@@ -19,8 +23,20 @@ public class Region {
     }
 
     public boolean contains(Location location) {
-        if (location.getWorld() == null) return false;
-        if (!location.getWorld().getName().equals(worldName)) return false;
+        World locWorld = location.getWorld();
+        if (locWorld == null) return false;
+
+        World w = cachedWorld;
+        if (w == null) {
+            w = Bukkit.getWorld(worldName);
+            cachedWorld = w;
+        }
+
+        if (w != null) {
+            if (locWorld != w) return false;
+        } else if (!locWorld.getName().equals(worldName)) {
+            return false;
+        }
 
         int x = location.getBlockX();
         int y = location.getBlockY();

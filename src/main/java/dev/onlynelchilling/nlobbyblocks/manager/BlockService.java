@@ -1,6 +1,7 @@
 package dev.onlynelchilling.nlobbyblocks.manager;
 
 import org.bukkit.Location;
+import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 
 public interface BlockService {
@@ -8,6 +9,10 @@ public interface BlockService {
     void registerBlock(Location location);
 
     boolean isActiveBlock(Location location);
+
+    boolean isActiveBlock(Block block);
+
+    boolean hasActiveBlocks();
 
     void clearAll();
 
@@ -17,4 +22,3 @@ public interface BlockService {
 
     void removePlayer(Player player);
 }
-
